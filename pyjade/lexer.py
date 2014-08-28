@@ -20,6 +20,39 @@ def regexec(regex, input):
     return None
 
 
+def detect_closing_bracket(string):
+    count = 0
+    pos = string.find('[')
+    while True:
+        if string[pos] == '[':
+            count += 1
+        if string[pos] == ']':
+            count -= 1
+        pos += 1
+        if count == 0:
+            return pos
+
+
+def replace_string_brackets(splitted_string):
+    sval_replaced = []
+    old_delim = None
+    for i in splitted_string:
+        if old_delim is None:
+            sval_replaced.append(i)
+            if i in ('"', "'"):
+                old_delim = i
+            continue
+
+        if i in ('"', "'"):
+            if i == old_delim:
+                old_delim = None
+            sval_replaced.append(i)
+            continue
+
+        sval_replaced.append(re.sub(r'\[|\]', '*', i))
+    return ''.join(sval_replaced)
+
+
 class Lexer(object):
     RE_INPUT = re.compile(r'\r\n|\r')
     RE_COMMENT = re.compile(r'^ *\/\/(-)?([^\n]*)')
@@ -49,7 +82,9 @@ class Lexer(object):
     RE_INDENT_TABS = re.compile(r'^\n(\t*) *')
     RE_INDENT_SPACES = re.compile(r'^\n( *)')
     RE_COLON = re.compile(r'^: *')
-    # RE_ = re.compile(r'')
+    RE_INLINE = re.compile(r'(?<!\\)#\[')
+    RE_INLINE_ESCAPE = re.compile(r'\\#\[')
+    STRING_SPLITS = re.compile(r'([\'"])(.*?)(?<!\\)(\1)')
 
     def __init__(self, string, **options):
         if isinstance(string, six.binary_type):
@@ -169,11 +204,59 @@ class Lexer(object):
     def className(self):
         return self.scan(self.RE_CLASS, 'class')
 
+    def processInline(self, val, type, stash_textl=False):
+        sval = self.STRING_SPLITS.split(val)
+        sval_stripped = [i.strip() for i in sval]
+
+        if sval_stripped.count('"') % 2 != 0 or sval_stripped.count("'") % 2 != 0:
+            raise Exception('Unbalanced quotes found inside inline jade at line %s.' % self.lineno)
+
+        sval_replaced = replace_string_brackets(sval)
+        start_inline = self.RE_INLINE.search(sval_replaced).start()
+
+        try:
+            closing = start_inline + detect_closing_bracket(sval_replaced[start_inline:])
+        except IndexError:
+            raise Exception('The end of the string was reached with no closing bracket found at line %s.' % self.lineno)
+
+        textl = val[:start_inline]
+        code = val[start_inline:closing][2:-1]
+        textr = val[closing:]
+
+        textl_tok = self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textl))
+        if stash_textl:
+            self.stash.append(textl_tok)
+
+        ilexer = InlineLexer(code)
+        while True:
+            tok = ilexer.advance()
+            if tok.type == 'eos':
+                break
+            self.stash.append(tok)
+
+        if self.RE_INLINE.search(textr):
+            self.processInline(textr, type, stash_textl=True)
+        else:
+            self.stash.append(self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textr)))
+
+        return self.tok(type, textl)
+
+    def scanInline(self, regexp, type):
+        ret = self.scan(regexp, type)
+        if ret is None:
+            return ret
+
+        if self.RE_INLINE.search(ret.val):
+            ret = self.processInline(ret.val, type)
+        else:
+            ret.val = self.RE_INLINE_ESCAPE.sub('#[', ret.val)
+        return ret
+
     def string(self):
-        return self.scan(self.RE_STRING, 'string')
+        return self.scanInline(self.RE_STRING, 'string')
 
     def text(self):
-        return self.scan(self.RE_TEXT, 'text')
+        return self.scanInline(self.RE_TEXT, 'text')
 
     def extends(self):
         return self.scan(self.RE_EXTENDS, 'extends')
@@ -270,7 +353,7 @@ class Lexer(object):
             tok = self.tok('code', name)
             tok.escape = flags.startswith('=')
             #print captures
-            tok.buffer = '=' in flags 
+            tok.buffer = '=' in flags
             # print tok.buffer
             return tok
 
@@ -491,3 +574,28 @@ class Lexer(object):
             or self.text()
 
             ##or self._while() \
+
+
+class InlineLexer(Lexer):
+    def tok(self, type, val=None):
+        tok = super(InlineLexer, self).tok(type, val=val)
+        if tok is not None:
+            tok.insert_inline = True
+        return tok
+
+    def next(self):
+        return self.deferred() \
+            or self.blank() \
+            or self.eos() \
+            or self.pipelessText() \
+            or self.mixin() \
+            or self.call() \
+            or self.assignment() \
+            or self.tag() \
+            or self.code() \
+            or self.id() \
+            or self.className() \
+            or self.attrs() \
+            or self.colon() \
+            or self.string() \
+            or self.text()
