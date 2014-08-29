@@ -225,19 +225,19 @@ class Lexer(object):
 
         textl_tok = self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textl))
         if stash_textl:
-            self.stash.append(textl_tok)
+            self.defer(textl_tok)
 
         ilexer = InlineLexer(code, inline_level=self.options.get('inline_level', 0) + 1)
         while True:
             tok = ilexer.advance()
             if tok.type == 'eos':
                 break
-            self.stash.append(tok)
+            self.defer(tok)
 
         if self.RE_INLINE.search(textr):
             self.processInline(textr, type, stash_textl=True)
         else:
-            self.stash.append(self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textr)))
+            self.defer(self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textr)))
 
         return self.tok(type, textl)
 
