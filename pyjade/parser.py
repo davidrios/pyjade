@@ -38,7 +38,7 @@ class Parser(object):
     def lookahead(self,n):
         return self.lexer.lookahead(n)
 
-    def parse (self):
+    def parse(self):
         block = nodes.Block()
         parser = None
         block.line = self.line()
@@ -257,7 +257,8 @@ class Parser(object):
         if 'attrs'==self.lookahead(i).type: i += 1
         if ':'==self.lookahead(i).type:
             if 'indent' == self.lookahead(i+1).type:
-                return self.parseASTFilter
+                raise Exception('unexpected token "indent" in file %s on line %d' %
+                                (self.filename, self.line()))
 
         name = self.advance().val
         tag = nodes.Tag(name)
