@@ -101,7 +101,7 @@ class Lexer(object):
         self.pipeless = False
 
     def tok(self, type, val=None):
-        return Token(type=type, line=self.lineno, val=val)
+        return Token(type=type, line=self.lineno, val=val, inline_level=self.options.get('inline_level', 0))
 
     def consume(self, len):
         self.input = self.input[len:]
@@ -577,12 +577,6 @@ class Lexer(object):
 
 
 class InlineLexer(Lexer):
-    def tok(self, type, val=None):
-        tok = super(InlineLexer, self).tok(type, val=val)
-        if tok is not None:
-            tok.inline_level = self.options['inline_level']
-        return tok
-
     def next(self):
         return self.deferred() \
             or self.blank() \
