@@ -164,6 +164,7 @@ class Lexer(object):
             return
         captures = regexec(self.RE_BLANK, self.input)
         if captures:
+            self.lineno += 1
             self.consume(len(captures[0]) - 1)
             return self.next()
 
