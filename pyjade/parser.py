@@ -98,6 +98,12 @@ class Parser(object):
         node.line = self.line()
         return node
 
+    def parseTextInline(self):
+        tok = self.expect('text')
+        node = nodes.String(tok.val)
+        node.line = self.line()
+        return node
+
     def parseBlockExpansion(self):
         if ':'== self.peek().type:
             self.advance()
@@ -252,16 +258,43 @@ class Parser(object):
         self.expect('outdent')
         return block
 
+    def processInline(self, current_tag, current_level):
+        next_level = current_level + 1
+        while self.peek().inline_level == next_level:
+            if self.peek().type == 'text':
+                current_tag.block.append(self.parseTextInline())
+            else:
+                current_tag.block.append(self.parseExpr())
+
+        if self.peek().inline_level > next_level:
+            self.processInline(current_tag, next_level)
+
+    def processTagText(self, tag):
+        if self.peek().inline_level < tag.inline_level:
+            return
+
+        if not self.lookahead(2).inline_level > tag.inline_level:
+            tag.text = self.parseText()
+            return
+
+        while self.peek().inline_level == tag.inline_level and self.peek().type == 'text':
+            tag.block.append(self.parseTextInline())
+
+            if self.peek().inline_level > tag.inline_level:
+                self.processInline(tag, tag.inline_level)
+
     def parseTag(self):
         i = 2
         if 'attrs'==self.lookahead(i).type: i += 1
+
         if ':'==self.lookahead(i).type:
             if 'indent' == self.lookahead(i+1).type:
                 raise Exception('unexpected token "indent" in file %s on line %d' %
                                 (self.filename, self.line()))
 
-        name = self.advance().val
-        tag = nodes.Tag(name)
+        tok = self.advance()
+        tag = nodes.Tag(tok.val)
+        tag.inline_level = tok.inline_level
         dot = None
 
         tag.line = self.line()
@@ -272,14 +305,6 @@ class Parser(object):
                 tok = self.advance()
                 tag.setAttribute(tok.type,'"%s"'%tok.val,True)
                 continue
-            # if t=='id':
-            #     tok = self.advance()
-            #     tag.setId(tok.val)
-            #     continue
-            # elif t=='class':
-            #     tok = self.advance()
-            #     tag.addClass(tok.val)
-            #     continue
             elif 'attrs'==t:
                 tok = self.advance()
                 for n,v in six.iteritems(tok.attrs):
@@ -292,18 +317,19 @@ class Parser(object):
         if '.'== v:
             dot = tag.textOnly = True
             self.advance()
-        elif '<'== v: #For inline elements
+        elif '<'== v:  # For inline elements
             tag.inline = True
             self.advance()
 
         t = self.peek().type
-        if 'string'==t: tag.text = self.parseString()
-        elif 'text'==t: tag.text = self.parseText()
-        elif 'code'==t: tag.code = self.parseCode()
+        if 'code'==t: tag.code = self.parseCode()
         elif ':'==t:
             self.advance()
             tag.block = nodes.Block()
             tag.block.append(self.parseExpr())
+        elif 'string'==t: tag.text = self.parseString()
+        elif 'text'==t:
+            self.processTagText(tag)
 
         while 'newline' == self.peek().type: self.advance()
 
