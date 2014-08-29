@@ -227,7 +227,7 @@ class Lexer(object):
         if stash_textl:
             self.stash.append(textl_tok)
 
-        ilexer = InlineLexer(code)
+        ilexer = InlineLexer(code, inline_level=self.options.get('inline_level', 0) + 1)
         while True:
             tok = ilexer.advance()
             if tok.type == 'eos':
@@ -580,7 +580,7 @@ class InlineLexer(Lexer):
     def tok(self, type, val=None):
         tok = super(InlineLexer, self).tok(type, val=val)
         if tok is not None:
-            tok.insert_inline = True
+            tok.inline_level = self.options['inline_level']
         return tok
 
     def next(self):
