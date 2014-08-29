@@ -75,8 +75,10 @@ class Parser(object):
             return block
         elif t in ('id','class'):
             tok = self.advance()
-            self.lexer.defer(self.lexer.tok('tag','div'))
-            self.lexer.defer(tok)
+            new_div = self.lexer.tok('tag','div')
+            new_div.inline_level = tok.inline_level
+            self.lexer.stash.append(new_div)
+            self.lexer.stash.append(tok)
             return self.parseExpr()
 
         funcName = 'parse%s'%t.capitalize()
