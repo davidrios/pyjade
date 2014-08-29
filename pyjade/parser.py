@@ -100,12 +100,6 @@ class Parser(object):
         node.line = self.line()
         return node
 
-    def parseTextInline(self):
-        tok = self.expect('text')
-        node = nodes.String(tok.val)
-        node.line = self.line()
-        return node
-
     def parseBlockExpansion(self):
         if ':'== self.peek().type:
             self.advance()
@@ -263,10 +257,7 @@ class Parser(object):
     def processInline(self, current_tag, current_level):
         next_level = current_level + 1
         while self.peek().inline_level == next_level:
-            if self.peek().type == 'text':
-                current_tag.block.append(self.parseTextInline())
-            else:
-                current_tag.block.append(self.parseExpr())
+            current_tag.block.append(self.parseExpr())
 
         if self.peek().inline_level > next_level:
             self.processInline(current_tag, next_level)
@@ -280,7 +271,7 @@ class Parser(object):
             return
 
         while self.peek().inline_level == tag.inline_level and self.peek().type == 'text':
-            tag.block.append(self.parseTextInline())
+            tag.block.append(self.parseExpr())
 
             if self.peek().inline_level > tag.inline_level:
                 self.processInline(tag, tag.inline_level)
