@@ -124,7 +124,7 @@ class Compiler(object):
     def visitNode (self, node, *args, **kwargs):
         name = node.__class__.__name__
         if self.instring and name != 'Tag':
-            # self.buffer('\n')
+            self.buffer('\n')
             self.instring = False
         return getattr(self, 'visit%s' % name)(node, *args, **kwargs)
 
@@ -232,10 +232,11 @@ class Compiler(object):
             self.buffer('\n')
 
     def visitString(self,text):
+        instring = not text.inline
         text = ''.join(text.nodes)
         text = self.interpolate(text)
         self.buffer(text)
-        self.instring = True
+        self.instring = instring
 
     def visitComment(self,comment):
         if not comment.buffer: return

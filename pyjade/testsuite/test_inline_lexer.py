@@ -4,7 +4,7 @@ from pyjade.utils import odict
 expected_results = {
     "p Here is some #[strong: em text] and look at #[a(href='http://google.com') this link!]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' Here is some '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'Here is some '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 1, 'val': u'strong'},
         {'buffer': None, 'type': ':', 'line': 1, 'inline_level': 1, 'val': None},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 1, 'val': u'em'},
@@ -17,26 +17,26 @@ expected_results = {
 
     "p Other inline #[strong= 'test']": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' Other inline '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'Other inline '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 1, 'val': u'strong'},
         {'inline_level': 1, 'val': u" 'test'", 'buffer': True, 'escape': True, 'line': 1, 'type': 'code'},
         {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u''}],
 
     "p Test #[|text line]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' Test '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'Test '},
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u'text line'},
         {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u''}],
 
     "p Test buffered #[= map(str, zip('iln', 'nie')) + 'code']": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' Test buffered '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'Test buffered '},
         {'inline_level': 1, 'val': u" map(str, zip('iln', 'nie')) + 'code'", 'buffer': True, 'escape': True, 'line': 1, 'type': 'code'},
         {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u''}],
 
     "p #[- abcf = [[123, [[],[]], []],'abc']] #[= abcf]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u''},
         {'inline_level': 1, 'val': u" abcf = [[123, [[],[]], []],'abc']", 'buffer': False, 'escape': False, 'line': 1, 'type': 'code'},
         {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' '},
         {'inline_level': 1, 'val': u' abcf', 'buffer': True, 'escape': True, 'line': 1, 'type': 'code'},
@@ -47,9 +47,9 @@ expected_results = {
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u''},
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 2, 'val': u''},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 3, 'val': u'a'},
-        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 3, 'val': u' a'},
+        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 3, 'val': u'a'},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 4, 'val': u'b'},
-        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 4, 'val': u' '},
+        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 4, 'val': u''},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 5, 'val': u'i'},
         {'buffer': None, 'type': 'text', 'line': 1, 'inline_level': 5, 'val': u' a'},
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 4, 'val': u' b'},
@@ -60,11 +60,11 @@ expected_results = {
 
     "p We can also #[strong combine #[em multiple #[img(src='http://jade-lang.com/style/logo.png')]]]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' We can also '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'We can also '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 1, 'val': u'strong'},
-        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u' combine '},
+        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u'combine '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 2, 'val': u'em'},
-        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 2, 'val': u' multiple '},
+        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 2, 'val': u'multiple '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 3, 'val': u'img'},
         {'inline_level': 3, 'val': None, 'buffer': None, 'static_attrs': set([u'src']), 'attrs': odict([(u'src', u"'http://jade-lang.com/style/logo.png'")]), 'line': 1, 'type': 'attrs'},
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 2, 'val': u''},
@@ -81,12 +81,12 @@ expected_results = {
 
     "p Another #[strong.lil#okf(acs=[1,2]) test [[with brackets]] [in#[='side']]]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' Another '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'Another '},
         {'buffer': None, 'type': 'tag', 'line': 1, 'inline_level': 1, 'val': u'strong'},
         {'buffer': None, 'type': 'class', 'line': 1, 'inline_level': 1, 'val': u'lil'},
         {'buffer': None, 'type': 'id', 'line': 1, 'inline_level': 1, 'val': u'okf'},
         {'val': None, 'buffer': None, 'static_attrs': set([]), 'attrs': odict([(u'acs', u'[1,2]')]), 'line': 1, 'type': 'attrs', 'inline_level': 1},
-        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u' test [[with brackets]] [in'},
+        {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u'test [[with brackets]] [in'},
         {'inline_level': 2, 'val': u"'side'", 'buffer': True, 'escape': True, 'line': 1, 'type': 'code'},
         {'buffer': None, 'type': 'string', 'line': 1, 'inline_level': 1, 'val': u']'},
         {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u''}],
@@ -100,13 +100,13 @@ p Test inline mixin #[+lala(123, 'lala inside inline')] end""": [
         {'buffer': None, 'line': 2, 'type': 'text', 'inline_level': 0, 'val': u' lala(#{a}, #{b})'},
         {'buffer': None, 'line': 3, 'type': 'outdent', 'inline_level': 0, 'val': None},
         {'buffer': None, 'line': 3, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 3, 'type': 'string', 'inline_level': 0, 'val': u' Test inline mixin '},
+        {'buffer': None, 'line': 3, 'type': 'string', 'inline_level': 0, 'val': u'Test inline mixin '},
         {'inline_level': 1, 'val': u'lala', 'buffer': None, 'args': u"123, 'lala inside inline'", 'line': 1, 'type': 'call'},
         {'buffer': None, 'line': 3, 'type': 'string', 'inline_level': 0, 'val': u' end'}],
 
     "p only class #[.strong: em inline]": [
         {'buffer': None, 'line': 1, 'type': 'tag', 'inline_level': 0, 'val': u'p'},
-        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u' only class '},
+        {'buffer': None, 'line': 1, 'type': 'string', 'inline_level': 0, 'val': u'only class '},
         {'buffer': None, 'inline_level': 1, 'line': 1, 'type': 'class', 'val': u'strong'},
         {'buffer': None, 'inline_level': 1, 'line': 1, 'type': ':', 'val': None},
         {'buffer': None, 'inline_level': 1, 'line': 1, 'type': 'tag', 'val': u'em'},

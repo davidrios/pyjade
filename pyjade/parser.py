@@ -90,7 +90,7 @@ class Parser(object):
 
     def parseString(self):
         tok = self.expect('string')
-        node = nodes.String(tok.val)
+        node = nodes.String(tok.val, inline=tok.inline_level > 0)
         node.line = self.line()
         return node
 

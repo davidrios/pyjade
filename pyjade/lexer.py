@@ -240,7 +240,7 @@ class Lexer(object):
         else:
             self.defer(self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textr)))
 
-        return self.tok('string', textl)
+        return self.tok('string', textl.lstrip())
 
     def scanInline(self, regexp, type):
         ret = self.scan(regexp, type)
