@@ -21,6 +21,6 @@ setup(name='pyjade',
             'django',
             'jinja2',
             'tornado',
-            'pyramid >= 1.4, < 1.5',
+            'pyramid >= 1.4, <= 1.4.99',
             'mako',
       ])
