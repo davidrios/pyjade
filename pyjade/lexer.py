@@ -205,7 +205,7 @@ class Lexer(object):
     def className(self):
         return self.scan(self.RE_CLASS, 'class')
 
-    def processInline(self, val, type, stash_textl=False):
+    def processInline(self, val, stash_textl=False):
         sval = self.STRING_SPLITS.split(val)
         sval_stripped = [i.strip() for i in sval]
 
@@ -224,7 +224,7 @@ class Lexer(object):
         code = val[start_inline:closing][2:-1]
         textr = val[closing:]
 
-        textl_tok = self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textl))
+        textl_tok = self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textl))
         if stash_textl:
             self.defer(textl_tok)
 
@@ -236,11 +236,11 @@ class Lexer(object):
             self.defer(tok)
 
         if self.RE_INLINE.search(textr):
-            self.processInline(textr, type, stash_textl=True)
+            self.processInline(textr, stash_textl=True)
         else:
-            self.defer(self.tok(type, self.RE_INLINE_ESCAPE.sub('#[', textr)))
+            self.defer(self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textr)))
 
-        return self.tok(type, textl)
+        return self.tok('string', textl)
 
     def scanInline(self, regexp, type):
         ret = self.scan(regexp, type)
@@ -248,7 +248,7 @@ class Lexer(object):
             return ret
 
         if self.RE_INLINE.search(ret.val):
-            ret = self.processInline(ret.val, type)
+            ret = self.processInline(ret.val)
         else:
             ret.val = self.RE_INLINE_ESCAPE.sub('#[', ret.val)
         return ret

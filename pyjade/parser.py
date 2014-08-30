@@ -270,7 +270,7 @@ class Parser(object):
             tag.text = self.parseText()
             return
 
-        while self.peek().inline_level == tag.inline_level and self.peek().type == 'text':
+        while self.peek().inline_level == tag.inline_level and self.peek().type == 'string':
             tag.block.append(self.parseExpr())
 
             if self.peek().inline_level > tag.inline_level:
@@ -320,9 +320,8 @@ class Parser(object):
             self.advance()
             tag.block = nodes.Block()
             tag.block.append(self.parseExpr())
-        elif 'string'==t: tag.text = self.parseString()
-        elif 'text'==t:
-            self.processTagText(tag)
+        elif 'string'==t: self.processTagText(tag)
+        elif 'text'==t: tag.text = self.parseText()
 
         while 'newline' == self.peek().type: self.advance()
 
