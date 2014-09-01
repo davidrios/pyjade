@@ -225,12 +225,15 @@ class Lexer(object):
 
             tokens.append(text)
 
-        firstTok = tokens.popleft()
-        while len(tokens) > 0:
-            if tokens[-1].type == 'string' and not tokens[-1].val:
-                tokens.pop()
-                continue
-            self.defer(tokens.popleft())
+        if not tokens:
+            firstTok = None
+        else:
+            firstTok = tokens.popleft()
+            while tokens:
+                if tokens[-1].type == 'string' and not tokens[-1].val:
+                    tokens.pop()
+                    continue
+                self.defer(tokens.popleft())
 
         self.isTextBlock = False
         return firstTok
