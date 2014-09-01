@@ -24,6 +24,7 @@ class Lexer(object):
     RE_INPUT = re.compile(r'\r\n|\r')
     RE_COMMENT = re.compile(r'^ *\/\/(-)?([^\n]*)')
     RE_TAG = re.compile(r'^(\w[-:\w]*)')
+    RE_DOT_BLOCK_START = re.compile(r'^\.\n')
     RE_FILTER = re.compile(r'^:(\w+)')
     RE_DOCTYPE = re.compile(r'^(?:!!!|doctype) *([^\n]+)?')
     RE_ID = re.compile(r'^#([\w-]+)')
@@ -64,6 +65,7 @@ class Lexer(object):
         self.indentStack = deque()
         self.indentRe = None
         self.pipeless = False
+        self.isDotBlock = False
 
     def tok(self, type, val=None):
         return Token(type=type, line=self.lineno, val=val)
@@ -124,12 +126,19 @@ class Lexer(object):
         else:
             return self.tok('eos')
 
+    def consumeBlank(self):
+        captures = regexec(self.RE_BLANK, self.input)
+        if not captures:
+            return
+
+        self.lineno += 1
+        self.consume(len(captures[0]) - 1)
+        return captures
+
     def blank(self):
         if self.pipeless:
             return
-        captures = regexec(self.RE_BLANK, self.input)
-        if captures:
-            self.consume(len(captures[0]) - 1)
+        if self.consumeBlank():
             return self.next()
 
     def comment(self):
@@ -155,6 +164,76 @@ class Lexer(object):
             else:
                 tok = self.tok('tag', name)
             return tok
+
+    def dotBlockStart(self):
+        captures = regexec(self.RE_DOT_BLOCK_START, self.input)
+        if captures is None:
+            return
+
+        if len(self.indentStack) > 0:
+            self.dotBlockTagIndent = self.indentStack[0]
+        else:
+            self.dotBlockTagIndent = 0
+
+        self.consume(1)
+        self.isDotBlock = True
+        return self.dotBlockContinue(isStart=True)
+
+    def dotBlockContinue(self, isStart=False):
+        if not self.isDotBlock:
+            return
+
+        tokens = deque()
+        while True:
+            if self.consumeBlank():
+                if not isStart:
+                    tokens.append(self.tok('string', ''))
+                continue
+
+            eos = self.eos()
+            if eos is not None:
+                if isStart:
+                    return eos
+                tokens.append(eos)
+                break
+
+            nextIndent = self.captureIndent()
+            if nextIndent is None or len(nextIndent[1]) <= self.dotBlockTagIndent:
+                self.isDotBlock = False
+                if isStart:
+                    return self.tok('newline')
+                break
+
+            padding = 0
+            if not isStart and len(nextIndent[1]) > self.dotBlockIndent:
+                padding = len(nextIndent[1]) - self.dotBlockIndent
+                self.consume(1 + padding)
+                self.input = '\n' + self.input
+
+            indent = self.indent()
+            if isStart:
+                self.dotBlockIndent = indent.val
+                padding = 0
+
+            text = self.scan(self.RE_TEXT, 'string')
+            indentChar = self.indentRe == self.RE_INDENT_TABS and '\t' or ' '
+            text.val = (indentChar * padding) + text.val
+
+            if isStart:
+                self.defer(text)
+                return indent
+
+            tokens.append(text)
+
+        firstTok = tokens.popleft()
+        while len(tokens) > 0:
+            if tokens[-1].type == 'string' and not tokens[-1].val:
+                tokens.pop()
+                continue
+            self.defer(tokens.popleft())
+
+        self.isDotBlock = False
+        return firstTok
 
     def filter(self):
         return self.scan(self.RE_FILTER, 'filter')
@@ -406,7 +485,7 @@ class Lexer(object):
 
             return tok
 
-    def indent(self):
+    def captureIndent(self):
         if self.indentRe:
             captures = regexec(self.indentRe, self.input)
         else:
@@ -417,6 +496,10 @@ class Lexer(object):
                 captures = regexec(regex, self.input)
             if captures and captures[1]:
                 self.indentRe = regex
+        return captures
+
+    def indent(self):
+        captures = self.captureIndent()
 
         if captures:
             indents = len(captures[1])
@@ -463,6 +546,7 @@ class Lexer(object):
 
     def next(self):
         return self.deferred() \
+            or self.dotBlockContinue() \
             or self.blank() \
             or self.eos() \
             or self.pipelessText() \
@@ -479,6 +563,7 @@ class Lexer(object):
             or self.each() \
             or self.assignment() \
             or self.tag() \
+            or self.dotBlockStart() \
             or self.filter() \
             or self.code() \
             or self.id() \
