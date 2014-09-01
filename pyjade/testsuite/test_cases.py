@@ -111,7 +111,6 @@ def html_process(src, filename):
     if 'include' in src:
         import re
         src = re.sub(r'((^|\n)\s*include )(?!cases/)', '\\1cases/', src)
-
     return pyjade.ext.html.process_jade(src)
 
 processors['Html'] = html_process
