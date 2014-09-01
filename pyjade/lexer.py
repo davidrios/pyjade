@@ -250,15 +250,16 @@ class Lexer(object):
                 self.textBlockIndent = indent.val
                 padding = 0
 
-            text = self.scan(self.RE_TEXT, 'string')
+            itoks = self.scanInline(self.RE_TEXT, 'string')
             indentChar = self.indentRe == self.RE_INDENT_TABS and '\t' or ' '
-            text.val = (indentChar * padding) + text.val
+            itoks[0].val = (indentChar * padding) + itoks[0].val
 
             if isStart:
-                self.defer(text)
+                for tok in itoks:
+                    self.defer(tok)
                 return indent
 
-            tokens.append(text)
+            tokens.extend(itoks)
 
         if not tokens:
             firstTok = None
@@ -286,7 +287,7 @@ class Lexer(object):
     def className(self):
         return self.scan(self.RE_CLASS, 'class')
 
-    def processInline(self, val, stash_textl=False):
+    def processInline(self, val):
         sval = self.STRING_SPLITS.split(val)
         sval_stripped = [i.strip() for i in sval]
 
@@ -305,23 +306,23 @@ class Lexer(object):
         code = val[start_inline:closing][2:-1]
         textr = val[closing:]
 
-        textl_tok = self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textl))
-        if stash_textl:
-            self.defer(textl_tok)
+        toks = deque()
+
+        toks.append(self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textl)))
 
         ilexer = InlineLexer(code, inline_level=self.options.get('inline_level', 0) + 1)
         while True:
             tok = ilexer.advance()
             if tok.type == 'eos':
                 break
-            self.defer(tok)
+            toks.append(tok)
 
         if self.RE_INLINE.search(textr):
-            self.processInline(textr, stash_textl=True)
+            toks.extend(self.processInline(textr))
         else:
-            self.defer(self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textr)))
+            toks.append(self.tok('string', self.RE_INLINE_ESCAPE.sub('#[', textr)))
 
-        return self.tok('string', textl.lstrip())
+        return toks
 
     def scanInline(self, regexp, type):
         ret = self.scan(regexp, type)
@@ -330,15 +331,28 @@ class Lexer(object):
 
         if self.RE_INLINE.search(ret.val):
             ret = self.processInline(ret.val)
+            if ret:
+                ret[0].val = ret[0].val.lstrip()
         else:
             ret.val = self.RE_INLINE_ESCAPE.sub('#[', ret.val)
+            ret = deque([ret])
         return ret
 
+    def scanInlineProcess(self, regexp, type_):
+        toks = self.scanInline(regexp, type_)
+        if not toks:
+            return None
+
+        firstTok = toks.popleft()
+        for tok in toks:
+            self.defer(tok)
+        return firstTok
+
     def string(self):
-        return self.scanInline(self.RE_STRING, 'string')
+        return self.scanInlineProcess(self.RE_STRING, 'string')
 
     def text(self):
-        return self.scanInline(self.RE_TEXT, 'text')
+        return self.scanInlineProcess(self.RE_TEXT, 'text')
 
     def extends(self):
         return self.scan(self.RE_EXTENDS, 'extends')
