@@ -65,7 +65,7 @@ class Lexer(object):
         self.indentStack = deque()
         self.indentRe = None
         self.pipeless = False
-        self.isDotBlock = False
+        self.isTextBlock = False
 
     def tok(self, type, val=None):
         return Token(type=type, line=self.lineno, val=val)
@@ -165,22 +165,22 @@ class Lexer(object):
                 tok = self.tok('tag', name)
             return tok
 
-    def dotBlockStart(self):
+    def textBlockStart(self):
         captures = regexec(self.RE_DOT_BLOCK_START, self.input)
         if captures is None:
             return
 
         if len(self.indentStack) > 0:
-            self.dotBlockTagIndent = self.indentStack[0]
+            self.textBlockTagIndent = self.indentStack[0]
         else:
-            self.dotBlockTagIndent = 0
+            self.textBlockTagIndent = 0
 
         self.consume(1)
-        self.isDotBlock = True
-        return self.dotBlockContinue(isStart=True)
+        self.isTextBlock = True
+        return self.textBlockContinue(isStart=True)
 
-    def dotBlockContinue(self, isStart=False):
-        if not self.isDotBlock:
+    def textBlockContinue(self, isStart=False):
+        if not self.isTextBlock:
             return
 
         tokens = deque()
@@ -198,21 +198,21 @@ class Lexer(object):
                 break
 
             nextIndent = self.captureIndent()
-            if nextIndent is None or len(nextIndent[1]) <= self.dotBlockTagIndent:
-                self.isDotBlock = False
+            if nextIndent is None or len(nextIndent[1]) <= self.textBlockTagIndent:
+                self.isTextBlock = False
                 if isStart:
                     return self.tok('newline')
                 break
 
             padding = 0
-            if not isStart and len(nextIndent[1]) > self.dotBlockIndent:
-                padding = len(nextIndent[1]) - self.dotBlockIndent
+            if not isStart and len(nextIndent[1]) > self.textBlockIndent:
+                padding = len(nextIndent[1]) - self.textBlockIndent
                 self.consume(1 + padding)
                 self.input = '\n' + self.input
 
             indent = self.indent()
             if isStart:
-                self.dotBlockIndent = indent.val
+                self.textBlockIndent = indent.val
                 padding = 0
 
             text = self.scan(self.RE_TEXT, 'string')
@@ -232,7 +232,7 @@ class Lexer(object):
                 continue
             self.defer(tokens.popleft())
 
-        self.isDotBlock = False
+        self.isTextBlock = False
         return firstTok
 
     def filter(self):
@@ -546,7 +546,7 @@ class Lexer(object):
 
     def next(self):
         return self.deferred() \
-            or self.dotBlockContinue() \
+            or self.textBlockContinue() \
             or self.blank() \
             or self.eos() \
             or self.pipelessText() \
@@ -563,7 +563,7 @@ class Lexer(object):
             or self.each() \
             or self.assignment() \
             or self.tag() \
-            or self.dotBlockStart() \
+            or self.textBlockStart() \
             or self.filter() \
             or self.code() \
             or self.id() \
