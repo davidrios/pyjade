@@ -252,10 +252,11 @@ class Lexer(object):
 
             itoks = self.scanInline(self.RE_TEXT, 'string')
             indentChar = self.indentRe == self.RE_INDENT_TABS and '\t' or ' '
-            itoks[0].val = (indentChar * padding) + itoks[0].val
+            if itoks:
+                itoks[0].val = (indentChar * padding) + itoks[0].val
 
             if isStart:
-                for tok in itoks:
+                for tok in itoks or []:
                     self.defer(tok)
                 return indent
 
